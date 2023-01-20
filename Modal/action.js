@@ -1,33 +1,109 @@
-const  contactlist  = require('../Modal/modal')
- 
+const { userInfo, bookInfo } = require('../Modal/modal')
 
-   const AddContact = async(req, res) => {
-    const {contact} = req.body;
-    const lists =  contact?.map( async(list) => {
-      const newlist = (list?.toString().replace(/^\s+|\s+$/g,''));
-      const getexistscontact = await contactlist.findOne({contact:newlist.slice(-10)}).catch((err)=> console.log(err));
-        if(!getexistscontact){
-          return new contactlist({contact:newlist.slice(-10)}).save();
-        } 
-    });
+
+const adduserinfo = async (req, res) => {
+  const userinfo = req.body;
+  try {
+    const getexistscontact = await userInfo.findOne({ Email: userinfo.Email }).catch((err) => console.log(err));
+    if (!getexistscontact) {
+      new userInfo(userinfo).save();
+      return res.status(200).send("User added...");
+    } else {
+      return res.status(409).send("Email already exists ...");
+    }
+  } catch (err) {
+    res.status(503).send("Error");
+  }
+};
+
+const loginuser = async (req, res) => {
+  const data = req.body;
+  try {
+    const getcontact = await userInfo.findOne({ Email: data.Email });
+    if (getcontact.Email === data.Email && data.Password === getcontact.Password) {
+      return res.status(200).json({ message: "Login Successful" })
+    } else {
+      res.status(404).json({ message: "Check login details" });
+    }
+  } catch (error) {
+    res.status(404).json({ message: error.message });
+  }
+};
+
+const getBooklist = async (req, res) => {
+  const data = req.body;
+  try {
+    const getcontact = await bookInfo.find();
+    if (getcontact) {
+      return res.status(200).json({ list: getcontact })
+    } else {
+      res.status(404).json({ message: "Check login details" });
+    }
+  } catch (error) {
+    res.status(404).json({ message: error.message });
+  }
+};
+
+// const addBookInfo 
+
+const addBookInfo = async (req, res) => {
+  const bookinfo = req.body;
+  try {
+    new bookInfo(bookinfo).save();
+    return res.status(200).send("Book added...");
+
+  } catch (err) {
+    res.status(503).send("Error");
+  }
+};
+
+
+
+const removebooks = async (req, res) => {
+  const bookinfo_id = req.params.id;
+  try {
+    const remove = await bookInfo.findByIdAndDelete({_id: bookinfo_id});
+    return res.status(200).send("Book Deleted...");
+
+  } catch (err) {
+    res.status(503).send("Error");
+  }
+};
+
+const getbookinfo = async (req, res) => {
+  const bookinfo_id = req.params.id;
   
-    try {
-      const a1 = lists
-      return res.status(200).send("Number entered successfully");
+  try {
+    const getbook = await bookInfo.findById({_id: bookinfo_id});
+    if(getbook){
+      return res.status(200).json({info:getbook});
+    }
+
+  } catch (err) {
+    res.status(503).send("Error");
+  }
+};
+
+// editbooksInfo
+const editbooksInfo = async (req, res) => {
+  const bookinfo_id = req.params.id;
+  
+  try {
+    let bookdata = await bookInfo.findOneAndUpdate(
+      { id: bookinfo_id },
+      {
+        $set: {
+          title: req.body.title,
+          description: req.body.description,
+          title: req.body.title,
+        },
+      },
+      { new: true }
+      );
+      res.status(200).send(bookdata);
     } catch (err) {
       res.status(503).send("Error");
     }
-  };
-
-  const getContact = async(req, res) => {
-    try {
-      const getcontact = await contactlist.find();
-      res.send(getcontact)
-      // res.json({getcontact});
-      return res.status(200)
-    } catch (error) {
-            res.status(404).json({message:error.message});         
-    }
 };
 
-  module.exports = {AddContact, getContact};
+module.exports = { adduserinfo, loginuser, getBooklist, addBookInfo, removebooks, getbookinfo, editbooksInfo };
